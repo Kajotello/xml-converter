@@ -1,21 +1,18 @@
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
-import os
+
 
 class NewFileHandler(PatternMatchingEventHandler):
-        ignore_directories = True
-        patterns = ['*']
-        ignore_patterns = []
-        case_sensitive = True
+    ignore_directories = True
+    patterns = ['*']
+    ignore_patterns = []
+    case_sensitive = True
 
-        def __init__(self, event_handler):
-            self.event_handler = event_handler
+    def __init__(self, event_handler):
+        self.event_handler = event_handler
 
-        def on_created(self, event):
-            self.event_handler(event)
-        
-
-
+    def on_created(self, event):
+        self.event_handler(event)
 
 
 class DirectoryObserver:
@@ -36,4 +33,3 @@ class DirectoryObserver:
         """Terminate observing for changes in source folder"""
 
         self.observer.stop()
-            

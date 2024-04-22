@@ -4,15 +4,19 @@ import os
 import logging
 import io
 
+
 class Converter:
-    def __init__(self, src_folder: str, dst_folder: str, root_element_name: str='FLIGHT') -> None:
+    def __init__(self,
+                 src_folder: str, dst_folder: str,
+                 root_element_name: str = 'FLIGHT') -> None:
         self.src_folder = src_folder
         self.dst_folder = dst_folder
         self.root_element_name = root_element_name
 
     def _read_file(self, filehandler: io.TextIOWrapper) -> dict:
 
-        """ Open file with given filename from source folder and read it as a JSON """
+        """ Open file with given filename from source folder
+        and read it as a JSON """
 
         content = json.load(filehandler)
         flight_data = content[self.root_element_name]
@@ -44,16 +48,16 @@ class Converter:
         os.unlink(f'{self.src_folder}{filename}')
 
     def _make_conversion(self, input_fh: io.TextIOWrapper, output_fh: io.TextIOWrapper) -> None:
-        data = self._read_file(input_fh)  
+        data = self._read_file(input_fh)
         element = self._convert_to_XML(data)
         self._write_file(output_fh, element)
-    
+
     def convert_file(self, filename: str) -> None:
 
-        """Convert single file with given name from source folder and write it back to destination folder"""
+        """Convert single file with given name from source folder
+        and write it back to destination folder"""
 
         src_file_path = f'{self.src_folder}{filename}'
-
 
         logging.info(f'Conversion started for file {src_file_path}')
         if filename.split('.')[-1] == 'json':
@@ -69,7 +73,7 @@ class Converter:
             return
         except PermissionError:
             logging.error(f"Program doesn't have permission to read {filename} in {self.src_folder}")
-            return 
+            return
         with input_fh:
             try:
                 output_fh = open(f'{dest_file_path}', 'w')
@@ -78,11 +82,11 @@ class Converter:
                 return
             except PermissionError:
                 logging.error(f"Program doesn't have permission to write to {self.dst_folder}")
-                return 
+                return
             except IsADirectoryError:
                 logging.error(f"There is already a directory with name {dest_file_path}")
                 return
-            
+
             with output_fh:
                 try:
                     self._make_conversion(input_fh, output_fh)
@@ -94,16 +98,10 @@ class Converter:
                     return
         self._delete_old_file(os.path.basename(src_file_path))
         logging.info(f'Conversion successfully ended - results wrote to the file {dest_file_path}')
-    
+
     def convert_all(self) -> None:
 
         """Convert all files from source folder"""
 
         for filename in os.listdir(self.src_folder):
             self.convert_file(filename)
-    
-
-
-
-
-    

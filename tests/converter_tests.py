@@ -1,9 +1,7 @@
 import pytest
-from unittest.mock import patch, mock_open
 from src.converter_class import Converter
 import io
 import json
-
 
 
 @pytest.fixture
@@ -38,6 +36,7 @@ def test_make_conversion(converter):
 \t<REFUELED_AT>2024-03-20 12:30:00</REFUELED_AT>
 </FLIGHT>"""
 
+
 def test_make_conversion_different_root():
 
     example_input_different_root = io.StringIO('''{
@@ -51,8 +50,6 @@ def test_make_conversion_different_root():
         "REFUELED_AT": "2024-03-20 12:30:00"
      }
     }''')
-
-
     converter = Converter('test', 'test', 'refueling')
     result = io.StringIO('')
     converter._make_conversion(example_input_different_root, result)
@@ -67,6 +64,7 @@ def test_make_conversion_different_root():
 \t<REFUELED_AT>2024-03-20 12:30:00</REFUELED_AT>
 </refueling>"""
 
+
 def test_make_conversion_corrupted_file_missing_bracket(converter):
 
     corrupted_input_file_missing_bracket = io.StringIO('''{
@@ -79,10 +77,10 @@ def test_make_conversion_corrupted_file_missing_bracket(converter):
         "SCHEDULE_DEPARTURE_TIME": "2024-03-20 13:00:00",
         "REFUELED_AT": "2024-03-20 12:30:00"
     }''')
-    result = io.StringIO('')
+    res = io.StringIO('')
     with pytest.raises(json.JSONDecodeError):
-        converter._make_conversion(corrupted_input_file_missing_bracket, result)
-        
+        converter._make_conversion(corrupted_input_file_missing_bracket, res)
+
 
 def test_make_conversion_corrupted_file_missing_comma(converter):
 
