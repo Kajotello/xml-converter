@@ -8,12 +8,12 @@ import os
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
                     prog='JSON2XML converter',
-                    description='Convert JSON fueling files to XML',
+                    description='Convert JSON info fueling files to XML',
                     )
-    parser.add_argument('input_folder')
-    parser.add_argument('output_folder')
-    parser.add_argument('--logfile')
-    parser.add_argument('--loglevel', choices=['ERROR', 'INFO', 'DEBUG'])
+    parser.add_argument('input_folder', help='folder with input files in JSON format')
+    parser.add_argument('output_folder', help='folder in which files after conversion will be saved')
+    parser.add_argument('--logfile', help='file in which logs will be saved', default='logs.txt')
+    parser.add_argument('--loglevel', choices=['ERROR', 'INFO', 'DEBUG'], help='level of logging information')
     return parser.parse_args()
 
 
@@ -35,12 +35,12 @@ def main() -> None:
                         level=level)
 
     converter = Converter(args.input_folder, args.output_folder)
-    converter.convert_all()
+    converter.convert_all()  # on start convert all files that are already in directory
 
     observer = DirectoryObserver(converter.src_folder)
     observer.start_observing(
         lambda x: converter.convert_file(os.path.basename(x.src_path))
-    )
+    )  # start observing for new files
 
     while True:
         try:

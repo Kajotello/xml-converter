@@ -37,7 +37,7 @@ def test_make_conversion(converter):
 </FLIGHT>"""
 
 
-def test_make_conversion_different_root():
+def test_make_conversion_different_root(converter):
 
     example_input_different_root = io.StringIO('''{
      "refueling": {
@@ -50,7 +50,6 @@ def test_make_conversion_different_root():
         "REFUELED_AT": "2024-03-20 12:30:00"
      }
     }''')
-    converter = Converter('test', 'test', 'refueling')
     result = io.StringIO('')
     converter._make_conversion(example_input_different_root, result)
     assert result.getvalue() == \
@@ -98,3 +97,49 @@ def test_make_conversion_corrupted_file_missing_comma(converter):
     result = io.StringIO('')
     with pytest.raises(json.JSONDecodeError):
         converter._make_conversion(corrupted_input_file_missing_comma, result)
+
+
+def test_make_conversion_corrupted_file_no_root_dict(converter):
+
+    corrupted_input_file_no_root_dict = io.StringIO('''{}''')
+
+    result = io.StringIO('')
+    with pytest.raises(TypeError):
+        converter._make_conversion(corrupted_input_file_no_root_dict, result)
+
+
+def test_make_conversion_corrupted_file_no_root_list(converter):
+
+    corrupted_input_file_no_root_list = io.StringIO('''[]''')
+
+    result = io.StringIO('')
+    with pytest.raises(TypeError):
+        converter._make_conversion(corrupted_input_file_no_root_list, result)
+
+
+def test_make_conversion_corrupted_two_top_level(converter):
+
+    corrupted_input_file_two_top_level = io.StringIO('''{
+     "FLIGHT": {
+        "AIRCRAFT_REGISTRATION": "SPLSA",
+        "FLIGHT_NUMBER": 458,
+        "FLIGHT_DATE": "2024-03-20",
+        "DEPARTURE_AIRPORT": "WAW",
+        "ARRIVAL_AIRPORT": "JFK",
+        "SCHEDULE_DEPARTURE_TIME": "2024-03-20 13:00:00",
+        "REFUELED_AT": "2024-03-20 12:30:00"
+        },
+    "FLIGHT2": {
+        "AIRCRAFT_REGISTRATION": "SPLSA",
+        "FLIGHT_NUMBER": 458,
+        "FLIGHT_DATE": "2024-03-20",
+        "DEPARTURE_AIRPORT": "WAW",
+        "ARRIVAL_AIRPORT": "JFK",
+        "SCHEDULE_DEPARTURE_TIME": "2024-03-20 13:00:00",
+        "REFUELED_AT": "2024-03-20 12:30:00"
+        }
+    }''')
+
+    result = io.StringIO('')
+    with pytest.raises(TypeError):
+        converter._make_conversion(corrupted_input_file_two_top_level, result)
