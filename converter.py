@@ -10,7 +10,7 @@ def parse_arguments() -> argparse.Namespace:
 
     parser.add_argument('input_folder')
     parser.add_argument('output_folder')
-    parser.add_argument('-l', '--logfile')
+    parser.add_argument('--logfile')
     return parser.parse_args()
 
 
