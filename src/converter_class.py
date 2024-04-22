@@ -6,26 +6,31 @@ import io
 
 
 class Converter:
-    def __init__(self, src_folder: str, dst_folder: str, root_element_name: str = 'FLIGHT') -> None:
+    def __init__(self, src_folder: str, dst_folder: str) -> None:
         self.src_folder = src_folder
         self.dst_folder = dst_folder
-        self.root_element_name = root_element_name
 
     def _read_file(self, filehandler: io.TextIOWrapper) -> dict:
 
         """ Open file with given filename from source folder
         and read it as a JSON """
 
-        content = json.load(filehandler)
-        flight_data = content[self.root_element_name]
+        flight_data = json.load(filehandler)
         return flight_data
 
     def _convert_to_XML(self, flight_data: dict) -> ET.Element:
 
         """Convert single-level dict to XML element"""
 
-        flight_element = ET.Element(self.root_element_name)
-        for (attribute, value) in flight_data.items():
+        if len(flight_data) > 1:
+            raise TypeError('More than one root element')
+
+        if len(flight_data) == 0:
+            raise TypeError('No root element')
+
+        root_element_name = list(flight_data.keys())[0]
+        flight_element = ET.Element(root_element_name)
+        for (attribute, value) in flight_data[root_element_name].items():
             logging.debug(f'Read attribute {attribute} with value {value}')
             element = ET.SubElement(flight_element, attribute)
             logging.debug(f'Attribute {attribute} added successfully to document tree')
@@ -91,8 +96,11 @@ class Converter:
                 except json.JSONDecodeError:
                     logging.error(f'File {filename} is in wrong format and cannot be parsed as JSON.')
                     return
-                except KeyError:
-                    logging.error(f'File {filename} do not contain {self.root_element_name} field')
+                except TypeError as e:
+                    logging.error(f'File {filename} not in expected format: {e}')
+                    return
+                except AttributeError:
+                    logging.error(f'File {filename} does not contain nested object with flight data')
                     return
         self._delete_old_file(os.path.basename(src_file_path))
         logging.info(f'Conversion successfully ended - results wrote to the file {dest_file_path}')

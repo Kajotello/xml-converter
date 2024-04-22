@@ -10,19 +10,29 @@ def parse_arguments() -> argparse.Namespace:
                     prog='JSON2XML converter',
                     description='Convert JSON fueling files to XML',
                     )
-
     parser.add_argument('input_folder')
     parser.add_argument('output_folder')
     parser.add_argument('--logfile')
+    parser.add_argument('--loglevel', choices=['ERROR', 'INFO', 'DEBUG'])
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_arguments()
 
+    match args.loglevel:
+        case 'ERROR':
+            level = logging.ERROR
+        case 'INFO':
+            level = logging.INFO
+        case 'DEBUG':
+            level = logging.DEBUG
+        case _:
+            level = logging.INFO
+
     logging.basicConfig(filename=args.logfile,
                         encoding='utf-8',
-                        level=logging.INFO)
+                        level=level)
 
     converter = Converter(args.input_folder, args.output_folder)
     converter.convert_all()
