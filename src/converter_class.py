@@ -4,7 +4,6 @@ import os
 import logging
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import argparse
 
 class NewFileHandler(FileSystemEventHandler):
         def __init__(self, converter):
@@ -19,19 +18,22 @@ class NewFileHandler(FileSystemEventHandler):
             
 
 class Converter:
-    def __init__(self, src_folder, dst_folder):
+    def __init__(self, src_folder: str, dst_folder: str, root_element_name: str='FLIGHT') -> None:
         self.src_folder = src_folder
         self.dst_folder = dst_folder
+        self.root_element_name = root_element_name
 
-    def _read_file(self, filename):
-        logging.info(f'Conversion started for file {self.src_folder}{filename}')
+    def _read_file(self, filename: str) -> dict:
+
+        """ Open file with given filename from source folder and read it as a JSON """
+
         with open(f'{self.src_folder}{filename}', 'r') as fh:
             content = json.load(fh)
-            flight_data = content['FLIGHT']
+            flight_data = content[self.root_element_name]
             return flight_data
 
-    def _convert_to_XML(self, flight_data):
-        flight_element = ET.Element('FLIGHT')
+    def _convert_to_XML(self, flight_data: dict) -> ET.Element:
+        flight_element = ET.Element(self.root_element_name)
         for (attribute, value) in flight_data.items():
             logging.debug(f'Read attribute {attribute} with value {value}')
             element = ET.SubElement(flight_element, attribute)
@@ -39,26 +41,26 @@ class Converter:
             element.text = str(value)
         return flight_element
 
-    def _delete_old_file(self, filename):
-        os.unlink(f'{self.src_folder}{filename}')
-
-    def _write_file(self, filename, element):
+    def _write_file(self, filename: str, element: ET.Element) -> None:
         if filename.split('.')[-1] == 'json':
             filename = '.'.join(filename.split('.')[:-1])
         with open(f'{self.dst_folder}{filename}.xml', 'w') as fh:
             fh.write(ET.tostring(element, encoding="unicode"))
-            logging.info(f'Conversion successfully ended - results wrote to the file {self.dst_folder}{filename}.xml')
 
-    def start_observing(self):
+    def _delete_old_file(self, filename: str) -> None:
+        os.unlink(f'{self.src_folder}{filename}')
+
+    def start_observing(self) -> None:
         event_handler = NewFileHandler(self)
         self.observer = Observer()
         self.observer.schedule(event_handler, path=self.src_folder, recursive=False)
         self.observer.start()
 
-    def stop_observing(self):
+    def stop_observing(self) -> None:
         self.observer.stop()
     
-    def convert_file(self, filename):
+    def convert_file(self, filename: str) -> None:
+        logging.info(f'Conversion started for file {self.src_folder}{filename}')
         try:
             data = self._read_file(filename)
         except FileNotFoundError:
@@ -82,8 +84,9 @@ class Converter:
             return
         
         self._delete_old_file(filename)
+        logging.info(f'Conversion successfully ended - results wrote to the file {self.dst_folder}{filename}.xml')
     
-    def convert_all(self):
+    def convert_all(self) -> None:
         for filename in os.listdir(self.src_folder):
             self.convert_file(filename)
     

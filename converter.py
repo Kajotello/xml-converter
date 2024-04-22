@@ -2,7 +2,7 @@ import argparse
 import logging
 from src.converter_class import Converter
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
                     prog='JSON2XML converter',
                     description='Convert JSON fueling files to XML',
@@ -14,10 +14,9 @@ def parse_arguments():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+def main() -> None:
     args = parse_arguments()
 
-    logger = logging.getLogger('__name__')
     logging.basicConfig(filename=args.logfile, encoding='utf-8', level=logging.INFO)
 
     converter = Converter(args.input_folder, args.output_folder)
@@ -31,3 +30,6 @@ if __name__ == '__main__':
             pass
         except KeyboardInterrupt:
             converter.stop_observing()
+
+if __name__ == '__main__':
+    main()
