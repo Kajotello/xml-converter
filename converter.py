@@ -14,6 +14,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('output_folder', help='folder in which files after conversion will be saved')
     parser.add_argument('--logfile', help='file in which logs will be saved', default='logs.txt')
     parser.add_argument('--loglevel', choices=['ERROR', 'INFO', 'DEBUG'], help='level of logging information')
+    parser.add_argument('-o', '--once', action='store_true', help='run program only once an do not enter infinite loop')
     return parser.parse_args()
 
 
@@ -33,20 +34,22 @@ def main() -> None:
     logging.basicConfig(filename=args.logfile,
                         encoding='utf-8',
                         level=level)
+    logging.getLogger('watchdog.observers.inotify_buffer').setLevel(logging.ERROR)
 
     converter = Converter(args.input_folder, args.output_folder)
     converter.convert_all()  # on start convert all files that are already in directory
 
-    observer = DirectoryObserver(converter.src_folder)
-    observer.start_observing(
-        lambda x: converter.convert_file(os.path.basename(x.src_path))
-    )  # start observing for new files
+    if not args.once:
+        observer = DirectoryObserver(converter.src_folder)
+        observer.start_observing(
+            lambda x: converter.convert_file(os.path.basename(x.src_path))
+        )  # start observing for new files
 
-    while True:
-        try:
-            pass
-        except KeyboardInterrupt:
-            converter.stop_observing()
+        while True:
+            try:
+                pass
+            except KeyboardInterrupt:
+                converter.stop_observing()
 
 
 if __name__ == '__main__':

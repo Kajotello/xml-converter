@@ -18,6 +18,9 @@ class NewFileHandler(PatternMatchingEventHandler):
     def on_created(self, event: FileCreatedEvent) -> T:
         return self.event_handler(event)
 
+    def on_moved(self, event: FileCreatedEvent) -> T:
+        return self.event_handler(event)
+
 
 class DirectoryObserver:
     def __init__(self, dir: str) -> None:
