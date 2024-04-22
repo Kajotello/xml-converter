@@ -2,21 +2,7 @@ import json
 import xml.etree.ElementTree as ET
 import os
 import logging
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 import io
-
-class NewFileHandler(FileSystemEventHandler):
-        def __init__(self, converter):
-            self.converter = converter
-
-        def handler(self, event):
-            filename = os.path.basename(event.src_path)
-            self.converter.convert_file(filename)
-
-        def on_created(self, event):
-            self.handler(event)
-            
 
 class Converter:
     def __init__(self, src_folder: str, dst_folder: str, root_element_name: str='FLIGHT') -> None:
@@ -48,6 +34,7 @@ class Converter:
 
         """Write XML element with proper name to destination folder"""
 
+        ET.indent(element, space="\t", level=0)
         filehandler.write(ET.tostring(element, encoding="unicode"))
 
     def _delete_old_file(self, filename: str) -> None:
@@ -57,44 +44,24 @@ class Converter:
         os.unlink(f'{self.src_folder}{filename}')
 
     def _make_conversion(self, input_fh: io.TextIOWrapper, output_fh: io.TextIOWrapper) -> None:
-        try:
-            data = self._read_file(input_fh)  
-        except json.JSONDecodeError:
-            logging.error(f'File {input_fh.name} is in wrong format and cannot be parsed as JSON.')
-            return
-        except KeyError:
-            logging.error(f'File {input_fh.name} do not contain {self.root_element_name} field')
-            return
-        
+        data = self._read_file(input_fh)  
         element = self._convert_to_XML(data)
         self._write_file(output_fh, element)
-        self._delete_old_file(os.path.basename(input_fh.name))
-
-    def start_observing(self) -> None:
-
-        """Start observing changes in source folder to handle conversion for new files"""
-
-        event_handler = NewFileHandler(self)
-        self.observer = Observer()
-        self.observer.schedule(event_handler, path=self.src_folder, recursive=False)
-        self.observer.start()
-
-    def stop_observing(self) -> None:
-
-        """Terminate observing for changes in source folder"""
-
-        self.observer.stop()
     
     def convert_file(self, filename: str) -> None:
 
         """Convert single file with given name from source folder and write it back to destination folder"""
 
-        logging.info(f'Conversion started for file {self.src_folder}{filename}')
+        src_file_path = f'{self.src_folder}{filename}'
+
+
+        logging.info(f'Conversion started for file {src_file_path}')
         if filename.split('.')[-1] == 'json':
             output_filename = '.'.join(filename.split('.')[:-1])
         else:
             output_filename = filename
-        output_filename += '.xml'
+        dest_file_path = f'{self.dst_folder}{output_filename}.xml'
+
         try:
             input_fh = open(f'{self.src_folder}{filename}', 'r')
         except FileNotFoundError:
@@ -105,16 +72,28 @@ class Converter:
             return 
         with input_fh:
             try:
-                output_fh = open(f'{self.dst_folder}{output_filename}', 'w')
+                output_fh = open(f'{dest_file_path}', 'w')
             except FileNotFoundError:
                 logging.error(f'Directory {self.dst_folder} does not exist')
                 return
             except PermissionError:
                 logging.error(f"Program doesn't have permission to write to {self.dst_folder}")
                 return 
+            except IsADirectoryError:
+                logging.error(f"There is already a directory with name {dest_file_path}")
+                return
+            
             with output_fh:
-                self._make_conversion(input_fh, output_fh)
-        logging.info(f'Conversion successfully ended - results wrote to the file {self.dst_folder}{filename}.xml')
+                try:
+                    self._make_conversion(input_fh, output_fh)
+                except json.JSONDecodeError:
+                    logging.error(f'File {filename} is in wrong format and cannot be parsed as JSON.')
+                    return
+                except KeyError:
+                    logging.error(f'File {filename} do not contain {self.root_element_name} field')
+                    return
+        self._delete_old_file(os.path.basename(src_file_path))
+        logging.info(f'Conversion successfully ended - results wrote to the file {dest_file_path}')
     
     def convert_all(self) -> None:
 

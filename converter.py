@@ -1,6 +1,8 @@
 import argparse
 import logging
 from src.converter_class import Converter
+from src.observer_class import DirectoryObserver
+import os
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -20,10 +22,10 @@ def main() -> None:
     logging.basicConfig(filename=args.logfile, encoding='utf-8', level=logging.INFO)
 
     converter = Converter(args.input_folder, args.output_folder)
-
     converter.convert_all()
 
-    converter.start_observing()
+    observer = DirectoryObserver(converter.src_folder)
+    observer.start_observing(lambda x: converter.convert_file(os.path.basename(x.src_path)))
 
     while True:
         try:
