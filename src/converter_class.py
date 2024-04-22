@@ -6,9 +6,7 @@ import io
 
 
 class Converter:
-    def __init__(self,
-                 src_folder: str, dst_folder: str,
-                 root_element_name: str = 'FLIGHT') -> None:
+    def __init__(self, src_folder: str, dst_folder: str, root_element_name: str = 'FLIGHT') -> None:
         self.src_folder = src_folder
         self.dst_folder = dst_folder
         self.root_element_name = root_element_name
